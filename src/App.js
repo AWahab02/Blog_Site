@@ -9,7 +9,8 @@ import Missing from './Missing';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-
+import api from './api/posts';
+import EditPost from './EditPost';
 
 function App() {
 
@@ -18,58 +19,91 @@ function App() {
   const [deletePost, setDeletePost] = useState('');
   const [postBody, setPostBody] = useState('');
   const [postTitle, setPostTitle] = useState('');
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      title: "My First Post",
-      datetime: "July 01, 2021 11:17:36 AM",
-      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
-    },
-    {
-      id: 2,
-      title: "My 2nd Post",
-      datetime: "July 01, 2021 11:17:36 AM",
-      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
-    },
-    {
-      id: 3,
-      title: "My 3rd Post",
-      datetime: "July 01, 2021 11:17:36 AM",
-      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
-    },
-    {
-      id: 4,
-      title: "My Fourth Post",
-      datetime: "July 01, 2021 11:17:36 AM",
-      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
-    }
-  ]);
+  const [editpostBody, setEditPostBody] = useState('');
+  const [editpostTitle, setEditPostTitle] = useState('');
+  const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const history = useNavigate();
 
 
-  const handlesubmit = (e) =>{
+  const handlesubmit = async (e) =>{
     e.preventDefault();
     const id = posts.length? posts[posts.length-1].id+1 : 1;
     const datetime = format(new Date(), 'MMMM dd, yyyy pp');
     const newPost = { id,  title:postTitle, datetime, body: postBody}
-    const allPosts = [...posts, newPost];
-    setPosts(allPosts);
-    setPostTitle('');
-    setPostBody('');
-    history('/');
+    try
+    {
+      const response = await api.post('/posts', newPost);
+      const allPosts = [...posts, response.data];
+      setPosts(allPosts);
+      setPostTitle('');
+      setPostBody('');
+      history('/');
+    }
+    catch (err)
+    {
+      console.log(`Error: ${err.message}`);
+    }
+    
+    
     
 
   }
 
-  const handledelete = (id)=>{
-    const postlists = posts.filter(post=>
-      post.id !== id
-    )
-    history('/');
-    setPosts(postlists);
+  const handleedit = async (id)=> 
+  {
+    const datetime = format(new Date(), 'MMMM dd, yyyy pp');
+    const updatedPost = {id, title: editpostTitle, datetime, body: editpostBody};
+    try
+    {
+      const response = await api.put(`/posts/${id}`, updatedPost);
+      setPosts(posts.map(post => post.id === id? {...response.data}: post));
+      setEditPostBody('');
+      setEditPostTitle('');
+      history('/');
+    }
+    catch (err)
+    {
+      console.log(`Error: ${err.message}`);
+    }
+    
   }
+
+  const handledelete = async (id)=>{
+
+    try
+    {
+      const response = await api.delete(`/posts/${id}`);
+      const postlists = posts.filter(post=>
+        post.id !== id
+      )
+      history('/');
+      setPosts(postlists);
+    }
+    catch (err)
+    {
+      console.log(`Error: ${err.message}`);
+    }
+    
+  }
+
+  useEffect(()=>{
+    const fetchPosts = async () => {
+      try
+      {
+        const response = await api.get('/posts');
+        setPosts(response.data);
+      }
+      catch (err)
+      {
+        console.log(err.response.data);
+
+      }
+    }
+
+      fetchPosts();
+  }, [])
 
   useEffect(()=>{
     const filteredResults = posts.filter(post=> (
@@ -88,6 +122,7 @@ function App() {
           <Route exact path="/" element={<Home posts={searchResults}/>} />
           <Route exact path="/post" element={<NewPost handlesubmit={handlesubmit} postTitle={postTitle} setPostTitle={setPostTitle} postBody={postBody} setPostBody={setPostBody} />} />
           <Route exact path="/post/:id" element={<PostPage posts={posts} handledelete={handledelete} />} />
+          <Route exact path="/edit/:id" element={<EditPost posts={posts} handleedit={handleedit} editpostBody={editpostBody} editpostTitle={editpostTitle} setEditPostBody={setEditPostBody} setEditPostTitle={setEditPostTitle} />} />
           <Route exact path="/About" element={<About />} />
           <Route exact path="*" element={<Missing /> } />
         </Routes>

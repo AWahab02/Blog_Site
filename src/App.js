@@ -11,10 +11,9 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import api from './api/posts';
 import EditPost from './EditPost';
+import useWindowSize from './hooks/useWindowSize';
 
 function App() {
-
-  
 
   const [deletePost, setDeletePost] = useState('');
   const [postBody, setPostBody] = useState('');
@@ -25,6 +24,7 @@ function App() {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const history = useNavigate();
+  const { width } = useWindowSize();
 
 
   const handlesubmit = async (e) =>{
@@ -116,7 +116,7 @@ function App() {
   }, [posts, search]);
   return (
     <div className="App">
-        <Header title="React.js Blog"/>
+        <Header title="React.js Blog" width={width}/>
         <Nav search={search} setSearch={setSearch}/>
         <Routes>
           <Route exact path="/" element={<Home posts={searchResults}/>} />

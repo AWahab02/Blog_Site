@@ -12,6 +12,8 @@ import { format } from 'date-fns';
 import api from './api/posts';
 import EditPost from './EditPost';
 import useWindowSize from './hooks/useWindowSize';
+import useAxiosFetch from './hooks/useAxiosFetch';
+
 
 function App() {
 
@@ -25,6 +27,8 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const history = useNavigate();
   const { width } = useWindowSize();
+
+  const {data, fetchError, isLoading } = useAxiosFetch('http://localhost:3500/posts');
 
 
   const handlesubmit = async (e) =>{
@@ -88,7 +92,7 @@ function App() {
     
   }
 
-  useEffect(()=>{
+  /* useEffect(()=>{
     const fetchPosts = async () => {
       try
       {
@@ -103,7 +107,11 @@ function App() {
     }
 
       fetchPosts();
-  }, [])
+  }, []) */
+
+  useEffect(()=>{
+    setPosts(data);
+  }, [data])
 
   useEffect(()=>{
     const filteredResults = posts.filter(post=> (
@@ -119,7 +127,7 @@ function App() {
         <Header title="React.js Blog" width={width}/>
         <Nav search={search} setSearch={setSearch}/>
         <Routes>
-          <Route exact path="/" element={<Home posts={searchResults}/>} />
+          <Route exact path="/" element={<Home posts={searchResults} fetchError={fetchError} isLoading={isLoading}/>} />
           <Route exact path="/post" element={<NewPost handlesubmit={handlesubmit} postTitle={postTitle} setPostTitle={setPostTitle} postBody={postBody} setPostBody={setPostBody} />} />
           <Route exact path="/post/:id" element={<PostPage posts={posts} handledelete={handledelete} />} />
           <Route exact path="/edit/:id" element={<EditPost posts={posts} handleedit={handleedit} editpostBody={editpostBody} editpostTitle={editpostTitle} setEditPostBody={setEditPostBody} setEditPostTitle={setEditPostTitle} />} />
